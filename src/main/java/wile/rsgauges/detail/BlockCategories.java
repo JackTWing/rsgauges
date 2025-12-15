@@ -17,7 +17,7 @@ import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.GrowingPlantBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.common.IPlantable;
+import net.neoforged.neoforge.common.IPlantable;
 import wile.rsgauges.ModRsGauges;
 import wile.rsgauges.libmc.detail.Auxiliaries;
 

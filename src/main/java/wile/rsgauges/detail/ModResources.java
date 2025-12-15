@@ -17,14 +17,14 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import wile.rsgauges.ModRsGauges;
 import wile.rsgauges.libmc.detail.Registries;
 import wile.rsgauges.libmc.detail.SidedProxy;
 
 public class ModResources
 {
-  public static RegistryObject<SoundEvent> createSoundEvent(String name)
+  public static DeferredHolder<SoundEvent, SoundEvent> createSoundEvent(String name)
   {
     ResourceLocation id = new ResourceLocation(ModRsGauges.MODID, name);
     return Registries.sound_deferred_register.register(name, () -> SoundEvent.createVariableRangeEvent(id));
@@ -33,7 +33,7 @@ public class ModResources
   /**
    * Sounds
    */
-  public static RegistryObject<SoundEvent> ALARM_SIREN_SOUND;
+  public static DeferredHolder<SoundEvent, SoundEvent> ALARM_SIREN_SOUND;
 
   /**
    * Block sound player class used in the code, additionally specifying

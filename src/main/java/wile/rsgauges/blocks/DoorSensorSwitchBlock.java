@@ -59,7 +59,7 @@ public class DoorSensorSwitchBlock extends SwitchBlock
     { super(te_type, pos, state); }
 
     public DoorSensorSwitchTileEntity(BlockPos pos, BlockState state)
-    { super(ModContent.TET_DOORSENSOR_SWITCH, pos, state); }
+    { super(ModContent.tetDoorSensorSwitch(), pos, state); }
 
     @Override
     public void tick()

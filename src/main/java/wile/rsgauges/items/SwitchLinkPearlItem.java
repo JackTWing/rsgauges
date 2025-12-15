@@ -20,9 +20,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraft.core.registries.BuiltInRegistries;
 import wile.rsgauges.ModConfig;
 import wile.rsgauges.ModContent;
 import wile.rsgauges.detail.ModResources;
@@ -72,7 +72,7 @@ public class SwitchLinkPearlItem extends RsItem
     final SwitchLink link = SwitchLink.fromItemStack(stack);
     if(Auxiliaries.Tooltip.addInformation(stack, world, tooltip, flag, (!link.valid))) return;
     if(!link.valid) return;
-    final Block targetBlock = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(link.block_name));
+    final Block targetBlock = BuiltInRegistries.BLOCK.getOptional(new ResourceLocation(link.block_name)).orElse(null);
     if(targetBlock!=null) {
       tooltip.add(Auxiliaries.localizable(
         "switchlinking.switchlink_pearl.tooltip.linkedblock",

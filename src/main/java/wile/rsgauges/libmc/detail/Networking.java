@@ -10,7 +10,9 @@ package wile.rsgauges.libmc.detail;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,33 +20,40 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.neoforged.neoforge.common.util.FakePlayer;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 import java.util.function.BiConsumer;
-import java.util.function.Supplier;
-
 
 public class Networking
 {
   private static final String PROTOCOL = "1";
-  private static SimpleChannel DEFAULT_CHANNEL;
+  private static String MODID = "";
 
   public static void init(String modid)
   {
-    DEFAULT_CHANNEL = NetworkRegistry.ChannelBuilder
-      .named(new ResourceLocation(modid, "default_ch"))
-      .clientAcceptedVersions(PROTOCOL::equals).serverAcceptedVersions(PROTOCOL::equals).networkProtocolVersion(() -> PROTOCOL)
-      .simpleChannel();
-    int discr = -1;
-    DEFAULT_CHANNEL.registerMessage(++discr, PacketTileNotifyClientToServer.class, PacketTileNotifyClientToServer::compose, PacketTileNotifyClientToServer::parse, PacketTileNotifyClientToServer.Handler::handle);
-    DEFAULT_CHANNEL.registerMessage(++discr, PacketTileNotifyServerToClient.class, PacketTileNotifyServerToClient::compose, PacketTileNotifyServerToClient::parse, PacketTileNotifyServerToClient.Handler::handle);
-    DEFAULT_CHANNEL.registerMessage(++discr, PacketContainerSyncClientToServer.class, PacketContainerSyncClientToServer::compose, PacketContainerSyncClientToServer::parse, PacketContainerSyncClientToServer.Handler::handle);
-    DEFAULT_CHANNEL.registerMessage(++discr, PacketContainerSyncServerToClient.class, PacketContainerSyncServerToClient::compose, PacketContainerSyncServerToClient::parse, PacketContainerSyncServerToClient.Handler::handle);
-    DEFAULT_CHANNEL.registerMessage(++discr, OverlayTextMessage.class, OverlayTextMessage::compose, OverlayTextMessage::parse, OverlayTextMessage.Handler::handle);
+    MODID = modid;
+  }
+
+  public static void register(RegisterPayloadHandlersEvent event)
+  {
+    PayloadRegistrar registrar = event.registrar(PROTOCOL);
+
+    registrar.playToServer(PacketTileNotifyClientToServer.TYPE, PacketTileNotifyClientToServer.STREAM_CODEC, PacketTileNotifyClientToServer::handle);
+    registrar.playToClient(PacketTileNotifyServerToClient.TYPE, PacketTileNotifyServerToClient.STREAM_CODEC, PacketTileNotifyServerToClient::handle);
+
+    registrar.playToServer(PacketContainerSyncClientToServer.TYPE, PacketContainerSyncClientToServer.STREAM_CODEC, PacketContainerSyncClientToServer::handle);
+    registrar.playToClient(PacketContainerSyncServerToClient.TYPE, PacketContainerSyncServerToClient.STREAM_CODEC, PacketContainerSyncServerToClient::handle);
+
+    registrar.playToClient(OverlayTextMessage.TYPE, OverlayTextMessage.STREAM_CODEC, OverlayTextMessage::handle);
+  }
+
+  private static ResourceLocation resource(String path)
+  {
+    return new ResourceLocation(MODID, path);
   }
 
   //--------------------------------------------------------------------------------------------------------------------
@@ -57,58 +66,55 @@ public class Networking
     default void onClientPacketReceived(Player player, CompoundTag nbt) {}
   }
 
-  public static class PacketTileNotifyClientToServer
+  public record PacketTileNotifyClientToServer(BlockPos pos, CompoundTag nbt) implements CustomPacketPayload
   {
-    CompoundTag nbt = null;
-    BlockPos pos = BlockPos.ZERO;
+    public static final Type<PacketTileNotifyClientToServer> TYPE = new Type<>(resource("tile_notify_c2s"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketTileNotifyClientToServer> STREAM_CODEC = StreamCodec.of(
+      (buf, payload) -> {
+        buf.writeBlockPos(payload.pos);
+        buf.writeNbt(payload.nbt);
+      },
+      buf -> new PacketTileNotifyClientToServer(buf.readBlockPos(), buf.readNbt())
+    );
 
     public static void sendToServer(BlockPos pos, CompoundTag nbt)
-    { if((pos!=null) && (nbt!=null)) DEFAULT_CHANNEL.sendToServer(new PacketTileNotifyClientToServer(pos, nbt)); }
+    { if((pos!=null) && (nbt!=null)) PacketDistributor.sendToServer(new PacketTileNotifyClientToServer(pos, nbt)); }
 
     public static void sendToServer(BlockEntity te, CompoundTag nbt)
-    { if((te!=null) && (nbt!=null)) DEFAULT_CHANNEL.sendToServer(new PacketTileNotifyClientToServer(te, nbt)); }
+    { if((te!=null) && (nbt!=null)) PacketDistributor.sendToServer(new PacketTileNotifyClientToServer(te.getBlockPos(), nbt)); }
 
-    public PacketTileNotifyClientToServer()
-    {}
+    @Override
+    public Type<PacketTileNotifyClientToServer> type()
+    { return TYPE; }
 
-    public PacketTileNotifyClientToServer(BlockPos pos, CompoundTag nbt)
-    { this.nbt = nbt; this.pos = pos; }
-
-    public PacketTileNotifyClientToServer(BlockEntity te, CompoundTag nbt)
-    { this.nbt = nbt; pos = te.getBlockPos(); }
-
-    public static PacketTileNotifyClientToServer parse(final FriendlyByteBuf buf)
-    { return new PacketTileNotifyClientToServer(buf.readBlockPos(), buf.readNbt()); }
-
-    public static void compose(final PacketTileNotifyClientToServer pkt, final FriendlyByteBuf buf)
-    { buf.writeBlockPos(pkt.pos); buf.writeNbt(pkt.nbt); }
-
-    public static class Handler
+    public void handle(IPayloadContext context)
     {
-      public static void handle(final PacketTileNotifyClientToServer pkt, final Supplier<NetworkEvent.Context> ctx)
-      {
-        ctx.get().enqueueWork(() -> {
-          Player player = ctx.get().getSender();
-          if(player==null) return;
-          Level world = player.level();
-          final BlockEntity te = world.getBlockEntity(pkt.pos);
-          if(!(te instanceof IPacketTileNotifyReceiver)) return;
-          ((IPacketTileNotifyReceiver)te).onClientPacketReceived(ctx.get().getSender(), pkt.nbt);
-        });
-        ctx.get().setPacketHandled(true);
-      }
+      context.enqueueWork(() -> {
+        Player player = context.player();
+        if(player==null) return;
+        Level world = player.level();
+        BlockEntity te = world.getBlockEntity(pos);
+        if(!(te instanceof IPacketTileNotifyReceiver receiver)) return;
+        receiver.onClientPacketReceived(player, nbt);
+      });
     }
   }
 
-  public static class PacketTileNotifyServerToClient
+  public record PacketTileNotifyServerToClient(BlockPos pos, CompoundTag nbt) implements CustomPacketPayload
   {
-    CompoundTag nbt = null;
-    BlockPos pos = BlockPos.ZERO;
+    public static final Type<PacketTileNotifyServerToClient> TYPE = new Type<>(resource("tile_notify_s2c"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketTileNotifyServerToClient> STREAM_CODEC = StreamCodec.of(
+      (buf, payload) -> {
+        buf.writeBlockPos(payload.pos);
+        buf.writeNbt(payload.nbt);
+      },
+      buf -> new PacketTileNotifyServerToClient(buf.readBlockPos(), buf.readNbt())
+    );
 
     public static void sendToPlayer(Player player, BlockEntity te, CompoundTag nbt)
     {
-      if((!(player instanceof ServerPlayer)) || (player instanceof FakePlayer) || (te==null) || (nbt==null)) return;
-      DEFAULT_CHANNEL.sendTo(new PacketTileNotifyServerToClient(te, nbt), ((ServerPlayer)player).connection.connection, NetworkDirection.PLAY_TO_CLIENT);
+      if(!(player instanceof ServerPlayer serverPlayer) || (player instanceof FakePlayer) || (te==null) || (nbt==null)) return;
+      PacketDistributor.sendToPlayer(serverPlayer, new PacketTileNotifyServerToClient(te.getBlockPos(), nbt));
     }
 
     public static void sendToPlayers(BlockEntity te, CompoundTag nbt)
@@ -117,35 +123,20 @@ public class Networking
       for(Player player: te.getLevel().players()) sendToPlayer(player, te, nbt);
     }
 
-    public PacketTileNotifyServerToClient()
-    {}
+    @Override
+    public Type<PacketTileNotifyServerToClient> type()
+    { return TYPE; }
 
-    public PacketTileNotifyServerToClient(BlockPos pos, CompoundTag nbt)
-    { this.nbt=nbt; this.pos=pos; }
-
-    public PacketTileNotifyServerToClient(BlockEntity te, CompoundTag nbt)
-    { this.nbt=nbt; pos=te.getBlockPos(); }
-
-    public static PacketTileNotifyServerToClient parse(final FriendlyByteBuf buf)
-    { return new PacketTileNotifyServerToClient(buf.readBlockPos(), buf.readNbt()); }
-
-    public static void compose(final PacketTileNotifyServerToClient pkt, final FriendlyByteBuf buf)
-    { buf.writeBlockPos(pkt.pos); buf.writeNbt(pkt.nbt); }
-
-    public static class Handler
+    public void handle(IPayloadContext context)
     {
-      public static void handle(final PacketTileNotifyServerToClient pkt, final Supplier<NetworkEvent.Context> ctx)
-      {
-        ctx.get().enqueueWork(() -> {
-          if((pkt.nbt==null) || (pkt.pos==null)) return;
-          Level world = SidedProxy.getWorldClientSide();
-          if(world == null) return;
-          final BlockEntity te = world.getBlockEntity(pkt.pos);
-          if(!(te instanceof IPacketTileNotifyReceiver)) return;
-          ((IPacketTileNotifyReceiver)te).onServerPacketReceived(pkt.nbt);
-        });
-        ctx.get().setPacketHandled(true);
-      }
+      context.enqueueWork(() -> {
+        if((nbt==null) || (pos==null)) return;
+        Level world = SidedProxy.getWorldClientSide();
+        if(world == null) return;
+        BlockEntity te = world.getBlockEntity(pos);
+        if(!(te instanceof IPacketTileNotifyReceiver receiver)) return;
+        receiver.onServerPacketReceived(nbt);
+      });
     }
   }
 
@@ -159,63 +150,63 @@ public class Networking
     void onClientPacketReceived(int windowId, Player player, CompoundTag nbt);
   }
 
-  public static class PacketContainerSyncClientToServer
+  public record PacketContainerSyncClientToServer(int id, CompoundTag nbt) implements CustomPacketPayload
   {
-    int id = -1;
-    CompoundTag nbt = null;
+    public static final Type<PacketContainerSyncClientToServer> TYPE = new Type<>(resource("container_sync_c2s"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketContainerSyncClientToServer> STREAM_CODEC = StreamCodec.of(
+      (buf, payload) -> {
+        buf.writeInt(payload.id);
+        buf.writeNbt(payload.nbt);
+      },
+      buf -> new PacketContainerSyncClientToServer(buf.readInt(), buf.readNbt())
+    );
 
     public static void sendToServer(int windowId, CompoundTag nbt)
-    { if(nbt!=null) DEFAULT_CHANNEL.sendToServer(new PacketContainerSyncClientToServer(windowId, nbt)); }
+    { if(nbt!=null) PacketDistributor.sendToServer(new PacketContainerSyncClientToServer(windowId, nbt)); }
 
     public static void sendToServer(AbstractContainerMenu container, CompoundTag nbt)
-    { if(nbt!=null) DEFAULT_CHANNEL.sendToServer(new PacketContainerSyncClientToServer(container.containerId, nbt)); }
+    { if(nbt!=null) PacketDistributor.sendToServer(new PacketContainerSyncClientToServer(container.containerId, nbt)); }
 
-    public PacketContainerSyncClientToServer()
-    {}
+    @Override
+    public Type<PacketContainerSyncClientToServer> type()
+    { return TYPE; }
 
-    public PacketContainerSyncClientToServer(int id, CompoundTag nbt)
-    { this.nbt = nbt; this.id = id; }
-
-    public static PacketContainerSyncClientToServer parse(final FriendlyByteBuf buf)
-    { return new PacketContainerSyncClientToServer(buf.readInt(), buf.readNbt()); }
-
-    public static void compose(final PacketContainerSyncClientToServer pkt, final FriendlyByteBuf buf)
-    { buf.writeInt(pkt.id); buf.writeNbt(pkt.nbt); }
-
-    public static class Handler
+    public void handle(IPayloadContext context)
     {
-      public static void handle(final PacketContainerSyncClientToServer pkt, final Supplier<NetworkEvent.Context> ctx)
-      {
-        ctx.get().enqueueWork(() -> {
-          Player player = ctx.get().getSender();
-          if((player==null) || !(player.containerMenu instanceof INetworkSynchronisableContainer)) return;
-          if(player.containerMenu.containerId != pkt.id) return;
-          ((INetworkSynchronisableContainer)player.containerMenu).onClientPacketReceived(pkt.id, player,pkt.nbt);
-        });
-        ctx.get().setPacketHandled(true);
-      }
+      context.enqueueWork(() -> {
+        Player player = context.player();
+        if(!(player instanceof ServerPlayer serverPlayer)) return;
+        if(!(serverPlayer.containerMenu instanceof INetworkSynchronisableContainer container)) return;
+        if(serverPlayer.containerMenu.containerId != id) return;
+        container.onClientPacketReceived(id, serverPlayer, nbt);
+      });
     }
   }
 
-  public static class PacketContainerSyncServerToClient
+  public record PacketContainerSyncServerToClient(int id, CompoundTag nbt) implements CustomPacketPayload
   {
-    int id = -1;
-    CompoundTag nbt = null;
+    public static final Type<PacketContainerSyncServerToClient> TYPE = new Type<>(resource("container_sync_s2c"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketContainerSyncServerToClient> STREAM_CODEC = StreamCodec.of(
+      (buf, payload) -> {
+        buf.writeInt(payload.id);
+        buf.writeNbt(payload.nbt);
+      },
+      buf -> new PacketContainerSyncServerToClient(buf.readInt(), buf.readNbt())
+    );
 
     public static void sendToPlayer(Player player, int windowId, CompoundTag nbt)
     {
-      if((!(player instanceof ServerPlayer)) || (player instanceof FakePlayer) || (nbt==null)) return;
-      DEFAULT_CHANNEL.sendTo(new PacketContainerSyncServerToClient(windowId, nbt), ((ServerPlayer)player).connection.connection, NetworkDirection.PLAY_TO_CLIENT);
+      if(!(player instanceof ServerPlayer serverPlayer) || (player instanceof FakePlayer) || (nbt==null)) return;
+      PacketDistributor.sendToPlayer(serverPlayer, new PacketContainerSyncServerToClient(windowId, nbt));
     }
 
     public static void sendToPlayer(Player player, AbstractContainerMenu container, CompoundTag nbt)
     {
-      if((!(player instanceof ServerPlayer)) || (player instanceof FakePlayer) || (nbt==null)) return;
-      DEFAULT_CHANNEL.sendTo(new PacketContainerSyncServerToClient(container.containerId, nbt), ((ServerPlayer)player).connection.connection, NetworkDirection.PLAY_TO_CLIENT);
+      if(container==null) return;
+      sendToPlayer(player, container.containerId, nbt);
     }
 
-    public static <C extends AbstractContainerMenu & INetworkSynchronisableContainer>
-    void sendToListeners(Level world, C container, CompoundTag nbt)
+    public static <C extends AbstractContainerMenu & INetworkSynchronisableContainer> void sendToListeners(Level world, C container, CompoundTag nbt)
     {
       for(Player player: world.players()) {
         if(player.containerMenu.containerId != container.containerId) continue;
@@ -223,30 +214,18 @@ public class Networking
       }
     }
 
-    public PacketContainerSyncServerToClient()
-    {}
+    @Override
+    public Type<PacketContainerSyncServerToClient> type()
+    { return TYPE; }
 
-    public PacketContainerSyncServerToClient(int id, CompoundTag nbt)
-    { this.nbt=nbt; this.id=id; }
-
-    public static PacketContainerSyncServerToClient parse(final FriendlyByteBuf buf)
-    { return new PacketContainerSyncServerToClient(buf.readInt(), buf.readNbt()); }
-
-    public static void compose(final PacketContainerSyncServerToClient pkt, final FriendlyByteBuf buf)
-    { buf.writeInt(pkt.id); buf.writeNbt(pkt.nbt); }
-
-    public static class Handler
+    public void handle(IPayloadContext context)
     {
-      public static void handle(final PacketContainerSyncServerToClient pkt, final Supplier<NetworkEvent.Context> ctx)
-      {
-        ctx.get().enqueueWork(() -> {
-          Player player = SidedProxy.getPlayerClientSide();
-          if((player==null) || !(player.containerMenu instanceof INetworkSynchronisableContainer)) return;
-          if(player.containerMenu.containerId != pkt.id) return;
-          ((INetworkSynchronisableContainer)player.containerMenu).onServerPacketReceived(pkt.id,pkt.nbt);
-        });
-        ctx.get().setPacketHandled(true);
-      }
+      context.enqueueWork(() -> {
+        Player player = SidedProxy.getPlayerClientSide();
+        if(!(player != null && player.containerMenu instanceof INetworkSynchronisableContainer container)) return;
+        if(player.containerMenu.containerId != id) return;
+        container.onServerPacketReceived(id, nbt);
+      });
     }
   }
 
@@ -254,56 +233,35 @@ public class Networking
   // Main window GUI text message
   //--------------------------------------------------------------------------------------------------------------------
 
-  public static class OverlayTextMessage
+  public record OverlayTextMessage(Component data, int delay) implements CustomPacketPayload
   {
     public static final int DISPLAY_TIME_MS = 3000;
+    public static final Type<OverlayTextMessage> TYPE = new Type<>(resource("overlay_text"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, OverlayTextMessage> STREAM_CODEC = StreamCodec.of(
+      (buf, payload) -> buf.writeComponent(payload.data),
+      buf -> new OverlayTextMessage(buf.readComponent(), DISPLAY_TIME_MS)
+    );
+
     private static BiConsumer<Component, Integer> handler_ = null;
-    private final Component data_;
-    private int delay_ = DISPLAY_TIME_MS;
-    private Component data() { return data_; }
-    private int delay() { return delay_; }
 
     public static void setHandler(BiConsumer<Component, Integer> handler)
     { if(handler_==null) handler_ = handler; }
 
     public static void sendToPlayer(Player player, Component message, int delay)
     {
-      if((!(player instanceof ServerPlayer)) || (player instanceof FakePlayer)) return;
-      DEFAULT_CHANNEL.sendTo(new OverlayTextMessage(message, delay), ((ServerPlayer)player).connection.connection, NetworkDirection.PLAY_TO_CLIENT);
+      if(!(player instanceof ServerPlayer serverPlayer) || (player instanceof FakePlayer)) return;
+      PacketDistributor.sendToPlayer(serverPlayer, new OverlayTextMessage(message, delay));
     }
 
-    public OverlayTextMessage()
-    { data_ = Component.translatable("[unset]"); }
+    @Override
+    public Type<OverlayTextMessage> type()
+    { return TYPE; }
 
-    public OverlayTextMessage(final Component tct, int delay)
-    { data_ = tct.copy(); delay_ = delay; }
-
-    public static OverlayTextMessage parse(final FriendlyByteBuf buf)
+    public void handle(IPayloadContext context)
     {
-      try {
-        return new OverlayTextMessage(buf.readComponent(), DISPLAY_TIME_MS);
-      } catch(Throwable e) {
-        return new OverlayTextMessage(Component.translatable("[incorrect translation]"), DISPLAY_TIME_MS);
-      }
-    }
-
-    public static void compose(final OverlayTextMessage pkt, final FriendlyByteBuf buf)
-    {
-      try {
-        buf.writeComponent(pkt.data());
-      } catch(Throwable e) {
-        Auxiliaries.logger().error("OverlayTextMessage.toBytes() failed: " + e);
-      }
-    }
-
-    public static class Handler
-    {
-      public static void handle(final OverlayTextMessage pkt, final Supplier<NetworkEvent.Context> ctx)
-      {
-        if(handler_ != null) ctx.get().enqueueWork(() -> handler_.accept(pkt.data(), pkt.delay()));
-        ctx.get().setPacketHandled(true);
-      }
+      context.enqueueWork(() -> {
+        if(handler_ != null) handler_.accept(data, delay);
+      });
     }
   }
-
 }

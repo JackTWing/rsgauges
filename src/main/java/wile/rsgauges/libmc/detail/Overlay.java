@@ -15,12 +15,13 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.RenderGuiOverlayEvent;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RenderGuiEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import wile.rsgauges.ModRsGauges;
 
 
 public class Overlay
@@ -28,7 +29,7 @@ public class Overlay
   public static void register()
   {
     if(SidedProxy.mc() != null) {
-      MinecraftForge.EVENT_BUS.register(new TextOverlayGui());
+      NeoForge.EVENT_BUS.register(new TextOverlayGui());
       Networking.OverlayTextMessage.setHandler(TextOverlayGui::show);
     }
   }
@@ -43,7 +44,7 @@ public class Overlay
   // Client side handler
   // -----------------------------------------------------------------------------
 
-  @Mod.EventBusSubscriber(Dist.CLIENT)
+  @EventBusSubscriber(value = Dist.CLIENT, modid = ModRsGauges.MODID, bus = EventBusSubscriber.Bus.GAME)
   @OnlyIn(Dist.CLIENT)
   public static class TextOverlayGui extends Screen
   {
@@ -96,7 +97,7 @@ public class Overlay
     { super.tick(); }
 
     @SubscribeEvent
-    public void onRenderGui(RenderGuiOverlayEvent event)
+    public void onRenderGui(RenderGuiEvent.Post event)
     {
       //if(event.getType() != RenderGameOverlayEvent.ElementType.CHAT) return;
       if(deadline() < System.currentTimeMillis()) return;
@@ -111,7 +112,7 @@ public class Overlay
       final int cy = (int)(win.getGuiScaledHeight() * overlay_y_);
 
       GuiGraphics graphics = event.getGuiGraphics();
-      float partialTick = event.getPartialTick();
+      float partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(false);
 
       render(graphics, cx, cy, partialTick);
     }

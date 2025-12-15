@@ -10,25 +10,29 @@ package wile.rsgauges;
 
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.crafting.CraftingHelper;
-import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.config.ModConfigEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.event.config.ModConfigEvent;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import wile.rsgauges.detail.BlockCategories;
-import wile.rsgauges.libmc.detail.*;
+import wile.rsgauges.libmc.detail.Auxiliaries;
+import wile.rsgauges.libmc.detail.Networking;
+import wile.rsgauges.libmc.detail.OptionalRecipeCondition;
+import wile.rsgauges.libmc.detail.PlayerBlockInteraction;
+import wile.rsgauges.libmc.detail.Registries;
+import wile.rsgauges.libmc.detail.Overlay;
 
 import java.util.List;
 
-
-@Mod("rsgauges")
+@Mod(ModRsGauges.MODID)
 public class ModRsGauges
 {
   public static final String MODID = "rsgauges";
@@ -38,30 +42,37 @@ public class ModRsGauges
 
   // -------------------------------------------------------------------------------------------------------------------
 
-  public ModRsGauges()
+  public ModRsGauges(IEventBus modEventBus, ModContainer modContainer)
   {
     Auxiliaries.init(MODID, LOGGER, ModConfig::getServerConfig);
     Auxiliaries.logGitVersion(MODNAME);
     Registries.init(MODID, "industrial_small_lever");
+    Registries.registerAll(modEventBus);
     ModContent.init(MODID);
     OptionalRecipeCondition.init(MODID, LOGGER);
-    ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.COMMON, ModConfig.COMMON_CONFIG_SPEC);
-    FMLJavaModLoadingContext.get().getModEventBus().addListener(ForgeEvents::onSetup);
-    FMLJavaModLoadingContext.get().getModEventBus().addListener(ForgeEvents::onClientSetup);
-    FMLJavaModLoadingContext.get().getModEventBus().addListener(this::addCreative);
-    MinecraftForge.EVENT_BUS.register(this);
+    Networking.init(MODID);
+
+    modContainer.registerConfig(ModConfig.Type.COMMON, ModConfig.COMMON_CONFIG_SPEC);
+    modContainer.registerConfig(ModConfig.Type.SERVER, ModConfig.SERVER_CONFIG_SPEC);
+
+    modEventBus.addListener(ForgeEvents::onSetup);
+    modEventBus.addListener(ForgeEvents::onClientSetup);
+    modEventBus.addListener(this::addCreative);
+    modEventBus.addListener(Networking::register);
+    OptionalRecipeCondition.register(modEventBus);
+
     PlayerBlockInteraction.init(MODID, LOGGER);
   }
 
   private void addCreative(BuildCreativeModeTabContentsEvent event)
   {
-    if(event.getTab() == Registries.RSGAUGES_TAB.get())
+    if(event.getTabKey().equals(Registries.RSGAUGES_TAB.getKey()))
     {
       List<Block> blocks = Registries.getRegisteredBlocks();
       List<Item> items = Registries.getRegisteredItems();
 
-      blocks.forEach((b) -> event.accept(b));
-      items.forEach((i) -> event.accept(i));
+      blocks.forEach(event::accept);
+      items.forEach(event::accept);
     }
   }
 
@@ -69,13 +80,11 @@ public class ModRsGauges
   // Events
   // -------------------------------------------------------------------------------------------------------------------
 
-  @Mod.EventBusSubscriber(bus=Mod.EventBusSubscriber.Bus.MOD)
+  @EventBusSubscriber(modid = MODID, bus = EventBusSubscriber.Bus.MOD)
   public static final class ForgeEvents
   {
     public static void onSetup(final FMLCommonSetupEvent event)
     {
-      CraftingHelper.register(OptionalRecipeCondition.Serializer.INSTANCE);
-      wile.rsgauges.libmc.detail.Networking.init(MODID);
       BlockCategories.update();
     }
 

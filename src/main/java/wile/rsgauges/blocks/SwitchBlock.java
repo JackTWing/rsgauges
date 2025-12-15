@@ -388,7 +388,7 @@ public class SwitchBlock extends RsDirectedBlock implements EntityBlock, SwitchL
     if((!force) && (te!=null) && (te.nooutput())) {
       // Nothing to notify about
       return;
-    } else if(net.minecraftforge.event.ForgeEventFactory.onNeighborNotify(world, pos, state, java.util.EnumSet.allOf(Direction.class), false).isCanceled()) {
+    } else if(net.neoforged.neoforge.event.EventHooks.onNeighborNotify(world, pos, state, java.util.EnumSet.allOf(Direction.class), false).isCanceled()) {
       // Canceled, don't invoke world.neighborChanged() directly as this would circumvent this check
       return;
     } else if((config & SWITCH_CONFIG_SIDES_CONFIGURABLE)!=0) {
@@ -397,7 +397,7 @@ public class SwitchBlock extends RsDirectedBlock implements EntityBlock, SwitchL
       final long disabled_sides = te.enabled_sides();
       for(Direction facing: Direction.values()) {
         if((disabled_sides & ((1l<<getAbsoluteFacing(state, facing).get3DDataValue()) << SWITCH_DATA_SIDE_ENABLED_SHIFT)) == 0) continue;
-        if(net.minecraftforge.event.ForgeEventFactory.onNeighborNotify(world, pos, state, java.util.EnumSet.of(facing), false).isCanceled()) continue;
+        if(net.neoforged.neoforge.event.EventHooks.onNeighborNotify(world, pos, state, java.util.EnumSet.of(facing), false).isCanceled()) continue;
         world.neighborChanged(pos.relative(facing), this, pos);
         if(force || !te.weak()) world.updateNeighborsAtExceptFromFacing(pos.relative(facing), this, facing.getOpposite());
       }
@@ -616,7 +616,7 @@ public class SwitchBlock extends RsDirectedBlock implements EntityBlock, SwitchL
     { super(te_type, pos, state); }
 
     public SwitchTileEntity(BlockPos pos, BlockState state)
-    { super(ModContent.TET_SWITCH, pos, state); }
+    { super(ModContent.tetSwitch(), pos, state); }
 
     @Override
     public void write(CompoundTag nbt, boolean updatePacket)
