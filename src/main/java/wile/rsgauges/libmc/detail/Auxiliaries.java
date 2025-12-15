@@ -29,10 +29,9 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.fml.ModList;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.glfw.GLFW;
 
@@ -256,15 +255,13 @@ public class Auxiliaries
   // Tag Handling
   // -------------------------------------------------------------------------------------------------------------------
 
-  @SuppressWarnings("deprecation")
   public static boolean isInItemTag(Item item, ResourceLocation tag)
   {
-    return ForgeRegistries.ITEMS.tags().stream().filter(tg->tg.getKey().location().equals(tag)).anyMatch(tk->tk.contains(item));
+    return Registries.matchesItemTag(item, tag);
   }
 
-  @SuppressWarnings("deprecation")
   public static boolean isInBlockTag(Block block, ResourceLocation tag)
-  { return ForgeRegistries.BLOCKS.tags().stream().filter(tg->tg.getKey().location().equals(tag)).anyMatch(tk->tk.contains(block)); }
+  { return Registries.matchesBlockTag(block, tag); }
 
   // -------------------------------------------------------------------------------------------------------------------
   // Item NBT data

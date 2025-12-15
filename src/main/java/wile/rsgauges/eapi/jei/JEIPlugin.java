@@ -13,12 +13,12 @@ public class JEIPlugin {}
 
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.runtime.IJeiRuntime;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 import wile.rsgauges.ModConfig;
 import wile.rsgauges.ModRsGauges;
@@ -42,7 +42,7 @@ public class JEIPlugin implements mezz.jei.api.IModPlugin
   {
     HashSet<Item> blacklisted = new HashSet<>();
     for(Block e: Registries.getRegisteredBlocks()) {
-      if(ModConfig.isOptedOut(e) && (ForgeRegistries.ITEMS.getKey(e.asItem()).getPath()).equals((ForgeRegistries.BLOCKS.getKey(e).getPath()))) {
+      if(ModConfig.isOptedOut(e) && BuiltInRegistries.ITEM.getKey(e.asItem()).getPath().equals(BuiltInRegistries.BLOCK.getKey(e).getPath())) {
         blacklisted.add(e.asItem());
       }
     }

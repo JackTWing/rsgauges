@@ -35,3 +35,5 @@ Thumbs.db
 forge*changelog.txt
 /*.txt
 mcmodsrepo
+# Ignore generated Gradle wrapper binary
+gradle/wrapper/gradle-wrapper.jar

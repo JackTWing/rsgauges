@@ -23,8 +23,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.IItemHandler;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.items.IItemHandler;
 import wile.rsgauges.ModConfig;
 import wile.rsgauges.ModContent;
 import wile.rsgauges.blocks.EnvironmentalSensorSwitchBlock.EnvironmentalSensorSwitchTileEntity;
@@ -80,7 +80,7 @@ public class ComparatorSwitchBlock extends AutoSwitchBlock
     public int link_output_power() { return link_output_power_; }
 
     public ComparatorSwitchTileEntity(BlockPos pos, BlockState state)
-    { super(ModContent.TET_COMPARATOR_SWITCH, pos, state); }
+    { super(ModContent.tetComparatorSwitch(), pos, state); }
 
     private interface Acquisition { int sample(Level world, BlockPos pos, BlockState state, Direction side); }
 
@@ -100,7 +100,7 @@ public class ComparatorSwitchBlock extends AutoSwitchBlock
           for(int i=0; i<size; ++i) n += inventory.getItem(i).isEmpty() ? 0 : 1;
           return (int)Math.round(((double)n*15)/(double)size);
         } else {
-          final IItemHandler handler = te.getCapability(ForgeCapabilities.ITEM_HANDLER, null).orElse(null);
+          final IItemHandler handler = world.getCapability(Capabilities.ItemHandler.BLOCK, pos, side);
           if(handler == null) return -1;
           final int size = handler.getSlots();
           if(size == 0) return 0;
@@ -120,7 +120,7 @@ public class ComparatorSwitchBlock extends AutoSwitchBlock
           for(int i = 0; i < size; ++i) n += inventory.getItem(i).isEmpty() ? 1 : 0;
           return (int)Math.round(((double)n*15)/(double)size);
         } else {
-          final IItemHandler handler = te.getCapability(ForgeCapabilities.ITEM_HANDLER, null).orElse(null);
+          final IItemHandler handler = world.getCapability(Capabilities.ItemHandler.BLOCK, pos, side);
           if(handler == null) return -1;
           final int size = handler.getSlots();
           if(size == 0) return 0;

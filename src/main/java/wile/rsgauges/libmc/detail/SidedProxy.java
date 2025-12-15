@@ -11,7 +11,8 @@ package wile.rsgauges.libmc.detail;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.fml.DistExecutor;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.loading.FMLEnvironment;
 
 import javax.annotation.Nullable;
 import java.util.Optional;
@@ -40,7 +41,7 @@ public class SidedProxy
 
   // --------------------------------------------------------------------------------------------------------
 
-  private static final ISidedProxy proxy = DistExecutor.unsafeRunForDist(()->ClientProxy::new, ()->ServerProxy::new);
+  private static final ISidedProxy proxy = (FMLEnvironment.dist == Dist.CLIENT) ? new ClientProxy() : new ServerProxy();
 
   private interface ISidedProxy
   {

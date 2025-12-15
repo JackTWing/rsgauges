@@ -68,7 +68,7 @@ public class EnvironmentalSensorSwitchBlock extends AutoSwitchBlock
     { super(te_type, pos, state); }
 
     public EnvironmentalSensorSwitchTileEntity(BlockPos pos, BlockState state)
-    { super(ModContent.TET_ENVSENSOR_SWITCH, pos, state); }
+    { super(ModContent.tetEnvSensorSwitch(), pos, state); }
 
     public double threshold0_on()
     { return threshold0_on_; }

@@ -90,7 +90,7 @@ public class ObserverSwitchBlock extends SwitchBlock
     { super(te_type, pos, state); }
 
     public ObserverSwitchTileEntity(BlockPos pos, BlockState state)
-    { super(ModContent.TET_OBSERVER_SWITCH, pos, state); }
+    { super(ModContent.tetObserverSwitch(), pos, state); }
 
     int debounce()
     { return debounce_; }

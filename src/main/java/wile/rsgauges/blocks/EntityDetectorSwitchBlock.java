@@ -81,7 +81,7 @@ public class EntityDetectorSwitchBlock extends AutoSwitchBlock
     { super(te_type, pos, state); }
 
     public DetectorSwitchTileEntity(BlockPos pos, BlockState state)
-    { super(ModContent.TET_DETECTOR_SWITCH, pos, state); }
+    { super(ModContent.tetDetectorSwitch(), pos, state); }
 
     public int filter()
     { return filter_; }

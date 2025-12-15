@@ -9,13 +9,13 @@
  */
 package wile.rsgauges;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
 import wile.rsgauges.libmc.detail.Auxiliaries;
 import wile.rsgauges.libmc.detail.OptionalRecipeCondition;
@@ -30,14 +30,14 @@ public class ModConfig
 {
   public static final CommonConfig COMMON;
   public static final ServerConfig SERVER;
-  public static final ForgeConfigSpec COMMON_CONFIG_SPEC;
-  public static final ForgeConfigSpec SERVER_CONFIG_SPEC;
+  public static final ModConfigSpec COMMON_CONFIG_SPEC;
+  public static final ModConfigSpec SERVER_CONFIG_SPEC;
 
   static {
-    final Pair<CommonConfig, ForgeConfigSpec> common_ = (new ForgeConfigSpec.Builder()).configure(CommonConfig::new);
+    final Pair<CommonConfig, ModConfigSpec> common_ = (new ModConfigSpec.Builder()).configure(CommonConfig::new);
     COMMON_CONFIG_SPEC = common_.getRight();
     COMMON = common_.getLeft();
-    final Pair<ServerConfig, ForgeConfigSpec> server_ = (new ForgeConfigSpec.Builder()).configure(ServerConfig::new);
+    final Pair<ServerConfig, ModConfigSpec> server_ = (new ModConfigSpec.Builder()).configure(ServerConfig::new);
     SERVER_CONFIG_SPEC = server_.getRight();
     SERVER = server_.getLeft();
   }
@@ -47,24 +47,24 @@ public class ModConfig
   public static class CommonConfig
   {
     // Optout
-    public final ForgeConfigSpec.ConfigValue<String> pattern_excludes;
-    public final ForgeConfigSpec.ConfigValue<String> pattern_includes;
-    public final ForgeConfigSpec.BooleanValue without_switch_linking;
-    public final ForgeConfigSpec.BooleanValue without_sculk_triggering;
+    public final ModConfigSpec.ConfigValue<String> pattern_excludes;
+    public final ModConfigSpec.ConfigValue<String> pattern_includes;
+    public final ModConfigSpec.BooleanValue without_switch_linking;
+    public final ModConfigSpec.BooleanValue without_sculk_triggering;
     // Misc
-    public final ForgeConfigSpec.BooleanValue with_experimental;
-    public final ForgeConfigSpec.IntValue max_switch_linking_distance;
+    public final ModConfigSpec.BooleanValue with_experimental;
+    public final ModConfigSpec.IntValue max_switch_linking_distance;
 //    public final ForgeConfigSpec.DoubleValue sculk_trigger_threshold;
-    public final ForgeConfigSpec.ConfigValue<String> accepted_wrenches;
-    public final ForgeConfigSpec.BooleanValue with_config_logging;
+    public final ModConfigSpec.ConfigValue<String> accepted_wrenches;
+    public final ModConfigSpec.BooleanValue with_config_logging;
     // Tweaks
-    public final ForgeConfigSpec.BooleanValue without_gauge_weak_power_measurement;
-    public final ForgeConfigSpec.IntValue gauge_update_interval;
-    public final ForgeConfigSpec.IntValue autoswitch_volumetric_update_interval;
-    public final ForgeConfigSpec.IntValue autoswitch_linear_update_interval;
-    public final ForgeConfigSpec.IntValue comparator_switch_update_interval;
+    public final ModConfigSpec.BooleanValue without_gauge_weak_power_measurement;
+    public final ModConfigSpec.IntValue gauge_update_interval;
+    public final ModConfigSpec.IntValue autoswitch_volumetric_update_interval;
+    public final ModConfigSpec.IntValue autoswitch_linear_update_interval;
+    public final ModConfigSpec.IntValue comparator_switch_update_interval;
 
-    CommonConfig(ForgeConfigSpec.Builder builder)
+    CommonConfig(ModConfigSpec.Builder builder)
     {
       builder.comment("Settings affecting the logical server side, but are also configurable in single player.")
         .push("server");
@@ -171,7 +171,7 @@ public class ModConfig
 
   public static class ServerConfig
   {
-    ServerConfig(ForgeConfigSpec.Builder builder)
+    ServerConfig(ModConfigSpec.Builder builder)
     {
       builder.comment("Settings affecting the logical server side, but are also configurable in single player.")
         .push("server");
@@ -188,7 +188,7 @@ public class ModConfig
   public static final boolean isOptedOut(final @Nullable Item item)
   {
     if (item == null) return true;
-    ResourceLocation key = ForgeRegistries.ITEMS.getKey(item);
+    ResourceLocation key = BuiltInRegistries.ITEM.getKey(item);
     return (key==null) || optouts_.contains(key.getPath());
   }
 
@@ -254,7 +254,7 @@ public class ModConfig
       Registries.getRegisteredBlocks().stream().filter((Block block) -> {
         try {
           // Force-include/exclude pattern matching
-          final String rn = ForgeRegistries.BLOCKS.getKey(block).getPath();
+          final String rn = BuiltInRegistries.BLOCK.getKey(block).getPath();
           try {
             for(String e : includes) {
               if(rn.matches(e)) {
@@ -276,7 +276,7 @@ public class ModConfig
         }
         return false;
       }).forEach(
-        e -> optouts.add(ForgeRegistries.BLOCKS.getKey(e).getPath())
+        e -> optouts.add(BuiltInRegistries.BLOCK.getKey(e).getPath())
       );
       optouts_ = optouts;
     }
@@ -322,5 +322,5 @@ public class ModConfig
   }
 
   public static final boolean isWrench(final ItemStack stack)
-  { return accepted_wrenches.contains(ForgeRegistries.ITEMS.getKey(stack.getItem())); }
+  { return accepted_wrenches.contains(BuiltInRegistries.ITEM.getKey(stack.getItem())); }
 }

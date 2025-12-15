@@ -21,10 +21,9 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.registries.ObjectHolder;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import wile.rsgauges.blocks.*;
 import wile.rsgauges.detail.ModResources;
 import wile.rsgauges.items.SwitchLinkPearlItem;
@@ -81,7 +80,6 @@ public class ModContent
     initTags();
     initBlocks();
     initItems();
-    Registries.registerAll();
   }
 
   private static void initTags()
@@ -1220,28 +1218,42 @@ public class ModContent
   // Tile entities bound exclusively to the blocks above
   //--------------------------------------------------------------------------------------------------------------------
 
-  @ObjectHolder(registryName = "block_entity_type", value = "rsgauges:te_gauge")
-  public static final BlockEntityType<AbstractGaugeBlock.GaugeTileEntity> TET_GAUGE = null;
-  @ObjectHolder(registryName = "block_entity_type", value =  "rsgauges:te_switch")
-  public static final BlockEntityType<SwitchBlock.SwitchTileEntity> TET_SWITCH = null;
-  @ObjectHolder(registryName = "block_entity_type", value =  "rsgauges:te_contact_switch")
-  public static final BlockEntityType<ContactSwitchBlock.ContactSwitchTileEntity> TET_CONTACT_SWITCH = null;
-  @ObjectHolder(registryName = "block_entity_type", value =  "rsgauges:te_detector_switch")
-  public static final BlockEntityType<EntityDetectorSwitchBlock.DetectorSwitchTileEntity> TET_DETECTOR_SWITCH = null;
-  @ObjectHolder(registryName = "block_entity_type", value =  "rsgauges:te_envsensor_switch")
-  public static final BlockEntityType<EnvironmentalSensorSwitchBlock.EnvironmentalSensorSwitchTileEntity> TET_ENVSENSOR_SWITCH = null;
-  @ObjectHolder(registryName = "block_entity_type", value =  "rsgauges:te_daytimer_switch")
-  public static final BlockEntityType<DayTimerSwitchBlock.DayTimerSwitchTileEntity> TET_DAYTIMER_SWITCH = null;
-  @ObjectHolder(registryName = "block_entity_type", value =  "rsgauges:te_intervaltimer_switch")
-  public static final BlockEntityType<IntervalTimerSwitchBlock.IntervalTimerSwitchTileEntity> TET_TIMER_SWITCH = null;
-  @ObjectHolder(registryName = "block_entity_type", value =  "rsgauges:te_comparator_switch")
-  public static final BlockEntityType<ComparatorSwitchBlock.ComparatorSwitchTileEntity> TET_COMPARATOR_SWITCH = null;
-  @ObjectHolder(registryName = "block_entity_type", value =  "rsgauges:te_observer_switch")
-  public static final BlockEntityType<ObserverSwitchBlock.ObserverSwitchTileEntity> TET_OBSERVER_SWITCH = null;
-  @ObjectHolder(registryName = "block_entity_type", value =  "rsgauges:te_doorsensor_switch")
-  public static final BlockEntityType<DoorSensorSwitchBlock.DoorSensorSwitchTileEntity> TET_DOORSENSOR_SWITCH = null;
-  @ObjectHolder(registryName = "item", value =  "rsgauges:switchlink_pearl")
-  public static final SwitchLinkPearlItem SWITCH_LINK_PEARL = null;
+  @SuppressWarnings("unchecked")
+  private static <T extends BlockEntityType<?>> T blockEntityType(String name)
+  { return (T)Registries.getBlockEntityType(name); }
+
+  public static BlockEntityType<AbstractGaugeBlock.GaugeTileEntity> tetGauge()
+  { return blockEntityType("tet_gauge"); }
+
+  public static BlockEntityType<SwitchBlock.SwitchTileEntity> tetSwitch()
+  { return blockEntityType("tet_switch"); }
+
+  public static BlockEntityType<ContactSwitchBlock.ContactSwitchTileEntity> tetContactSwitch()
+  { return blockEntityType("tet_contact_switch"); }
+
+  public static BlockEntityType<EntityDetectorSwitchBlock.DetectorSwitchTileEntity> tetDetectorSwitch()
+  { return blockEntityType("tet_detector_switch"); }
+
+  public static BlockEntityType<EnvironmentalSensorSwitchBlock.EnvironmentalSensorSwitchTileEntity> tetEnvSensorSwitch()
+  { return blockEntityType("tet_envsensor_switch"); }
+
+  public static BlockEntityType<DayTimerSwitchBlock.DayTimerSwitchTileEntity> tetDayTimerSwitch()
+  { return blockEntityType("tet_daytimer_switch"); }
+
+  public static BlockEntityType<IntervalTimerSwitchBlock.IntervalTimerSwitchTileEntity> tetTimerSwitch()
+  { return blockEntityType("tet_intervaltimer_switch"); }
+
+  public static BlockEntityType<ComparatorSwitchBlock.ComparatorSwitchTileEntity> tetComparatorSwitch()
+  { return blockEntityType("tet_comparator_switch"); }
+
+  public static BlockEntityType<ObserverSwitchBlock.ObserverSwitchTileEntity> tetObserverSwitch()
+  { return blockEntityType("tet_observer_switch"); }
+
+  public static BlockEntityType<DoorSensorSwitchBlock.DoorSensorSwitchTileEntity> tetDoorSensorSwitch()
+  { return blockEntityType("tet_doorsensor_switch"); }
+
+  public static SwitchLinkPearlItem switchLinkPearl()
+  { return (SwitchLinkPearlItem)Registries.getItem("switchlink_pearl"); }
 
   //--------------------------------------------------------------------------------------------------------------------
   // Initialisation events

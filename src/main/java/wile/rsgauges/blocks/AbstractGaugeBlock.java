@@ -259,7 +259,7 @@ public class AbstractGaugeBlock extends RsDirectedBlock implements EntityBlock, 
     private int switchlink_input_ = 0;
 
     public GaugeTileEntity(BlockPos pos, BlockState state)
-    { super(ModContent.TET_GAUGE, pos, state); }
+    { super(ModContent.tetGauge(), pos, state); }
 
     public int power()
     { return (int)((scd_ & GAUGE_DATA_POWER_MASK) >> GAUGE_DATA_POWER_SHIFT); }

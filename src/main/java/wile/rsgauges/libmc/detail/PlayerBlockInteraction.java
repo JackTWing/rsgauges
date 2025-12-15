@@ -15,11 +15,11 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent.LeftClickBlock;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickBlock;
-import net.minecraftforge.eventbus.api.EventPriority;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.LeftClickBlock;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickBlock;
 import org.apache.logging.log4j.Logger;
 
 
@@ -33,7 +33,7 @@ public class PlayerBlockInteraction
 
   public static void init(String modid, Logger logger)
   {
-    MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST,false, PlayerInteractEvent.class, PlayerBlockInteraction::onPlayerInteract);
+    NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST,false, PlayerInteractEvent.class, PlayerBlockInteraction::onPlayerInteract);
   }
 
   public static void onPlayerInteract(PlayerInteractEvent event)
