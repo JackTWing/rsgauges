@@ -1,39 +1,26 @@
+# eclipse
 bin
 *.launch
 .settings
 .metadata
 .classpath
 .project
+
+# idea
 out
 *.ipr
 *.iws
 *.iml
 .idea
+
+# gradle
 build
 .gradle
-*.tmp
-*.log
-*.jks
+
+# other
 eclipse
 run
-tests
-/dist
-signing.*
-src/main/java/archive
-src/main/resources/assets/minecraft
-.vscode
-/classes
-/dev
-/tmp
-/archive
-/assets-src
-.gimp
-*.xcf
-desktop.ini
-.DS_Store
-Thumbs.db
-forge*changelog.txt
-/*.txt
-mcmodsrepo
-# Ignore generated Gradle wrapper binary
-gradle/wrapper/gradle-wrapper.jar
+runs
+run-data
+
+repo
